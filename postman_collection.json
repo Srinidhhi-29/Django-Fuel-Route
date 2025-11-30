@@ -1,0 +1,55 @@
+{
+  "info": {
+    "name": "Fuel Route API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Route - coords",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"37.7749,-122.4194\",\n  \"finish\": \"34.0522,-118.2437\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/route/",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "route",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "Demo page",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/demo/",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "demo",
+            ""
+          ]
+        }
+      }
+    }
+  ]
+}

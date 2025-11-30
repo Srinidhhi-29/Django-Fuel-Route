@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Route Demo - Leaflet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body, html, #map { height: 100%; margin: 0; padding: 0; }
+    #controls { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(255,255,255,0.95); padding: 8px; border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,0.2); }
+    input { font-size:14px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <div><b>Demo Route Map</b></div>
+    <div style="margin-top:6px;">
+      <input id="start" placeholder="start (lat,lon or address)" size="30" value="37.7749,-122.4194" />
+      <input id="finish" placeholder="finish (lat,lon or address)" size="30" value="34.0522,-118.2437" />
+      <button id="go">Get Route</button>
+    </div>
+    <div id="info" style="margin-top:6px;font-size:13px;"></div>
+    <div style="margin-top:6px;font-size:12px;color:#555">Tip: include the minus sign for west/south (example above uses -122.4194)</div>
+  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([36.0, -119.0], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let routeLayer = null;
+    let stopsLayer = L.layerGroup().addTo(map);
+
+    async function fetchRoute(start, finish) {
+      console.log('Sending to backend', {start, finish});
+      const res = await fetch('/api/route/', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({start, finish})
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Request failed');
+      }
+      return res.json();
+    }
+
+    function drawRoute(data) {
+      if (routeLayer) map.removeLayer(routeLayer);
+      stopsLayer.clearLayers();
+      const latlngs = data.route_points.map(p => [p[0], p[1]]);
+      routeLayer = L.polyline(latlngs, {weight:4}).addTo(map);
+      map.fitBounds(routeLayer.getBounds(), {padding:[30,30]});
+      // draw stops
+      if (data.stops && data.stops.length) {
+        data.stops.forEach(s => {
+          const m = L.marker([s.location.lat, s.location.lon]).addTo(stopsLayer);
+          const popup = `<b>${s.station_name}</b><br>${s.address}<br>Price: $${s.price_per_gallon}<br>Gallons: ${s.gallons}<br>Est Cost: $${s.estimated_cost}`;
+          m.bindPopup(popup);
+        });
+      }
+      const info = `Distance: ${data.distance_miles} miles — Trip gallons: ${data.trip_fuel_gallons} — Est cost: $${data.trip_cost_estimate}`;
+      document.getElementById('info').innerText = info;
+    }
+
+    document.getElementById('go').addEventListener('click', async () => {
+      const start = document.getElementById('start').value.trim();
+      const finish = document.getElementById('finish').value.trim();
+      try {
+        const data = await fetchRoute(start, finish);
+        drawRoute(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
